@@ -1,0 +1,1 @@
+#!/bin/bashset -eecho "Starting services..."echo "DISPLAY=$DISPLAY"# Start supervisord to manage all processesexec supervisord -c /etc/supervisor/conf.d/supervisord.conf

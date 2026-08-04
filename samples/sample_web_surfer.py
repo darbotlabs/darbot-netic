@@ -1,8 +1,8 @@
 import argparse
 import asyncio
+import yaml
 from pathlib import Path
 from autogen_agentchat.ui import Console
-from autogen_ext.models.openai import OpenAIChatCompletionClient
 from autogen_agentchat.conditions import TextMentionTermination
 from autogen_agentchat.teams import RoundRobinGroupChat
 from magentic_ui.agents import WebSurfer
@@ -72,9 +72,21 @@ async def main() -> None:
     elif args.port != -1:
         browser = HeadlessDockerPlaywrightBrowser(playwright_port=args.port)
     else:
-        browser = LocalPlaywrightBrowser(headless=False)
-
-    model_client = OpenAIChatCompletionClient(model="gpt-4o")
+        browser = LocalPlaywrightBrowser(headless=False)    # Load configuration from config.yaml
+    config_path = Path(__file__).parent.parent / "config.yaml"
+    with open(config_path, "r") as file:
+        config = yaml.safe_load(file)
+      # Get the web_surfer_client from config
+    model_config = config.get("web_surfer_client", config.get("model_config", {}))
+    
+    # For Azure model config with model_info, create custom OpenAI client
+    from autogen_ext.models.openai import OpenAIChatCompletionClient
+    
+    # If using Azure provider, we'll use base OpenAI client with Azure API
+    cfg = model_config.get("config", {}).copy()
+    
+    # Use model config directly as we've already configured it properly
+    model_client = OpenAIChatCompletionClient(**cfg)
 
     termination = TextMentionTermination("Terminate")
 

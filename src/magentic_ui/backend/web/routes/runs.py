@@ -53,13 +53,16 @@ async def create_run(
             if not run_response.status:
                 raise HTTPException(status_code=400, detail=run_response.message)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e)) from e
-
-    # Return the run (either existing or newly created)
+            raise HTTPException(status_code=500, detail=str(e)) from e    # Return the run (either existing or newly created)
     run = None
     if isinstance(run_response.data, list):
-        # get the run with the latest created_at
-        run = max(run_response.data, key=lambda x: x.created_at)
+        # get the run with the latest created_at, filtering out None values
+        valid_runs = [r for r in run_response.data if r.created_at is not None]
+        if valid_runs:
+            run = max(valid_runs, key=lambda x: x.created_at)
+        else:
+            # If no runs have created_at, just take the first one
+            run = run_response.data[0] if run_response.data else None
     else:
         run = run_response.data
     return {"status": run_response.status, "data": {"run_id": str(run.id)}}
